@@ -1,0 +1,56 @@
+print("+++++++++++++++++++++++++++++++++++++++++++\n")
+
+# KNN 
+precs_facenet_svm, recs_facenet_svm, acc_facenet_svm = [], [], []
+
+precs_facenet_rf, recs_facenet_rf, acc_facenet_rf = [], [], []
+
+SVM = SVC(kernel='rbf', class_weight='balanced')
+SVM_parameters = {
+    'C': [1e3, 5e3],
+    'gamma': [0.0001, 0.0005, 0.001, 0.005, 0.01],
+}
+
+RF = RandomForestClassifier()
+RF_parameters = {
+    'n_estimators': [100, 150, 200],
+}
+
+fold = 1
+skf = StratifiedKFold(n_splits=5)
+for train_index, test_index in skf.split(X, Y):
+    print("*********************\nFold %d" % fold)
+        
+    # Facenet - SVM
+    print("\nDeepface/Facenet")
+    XFaceNet = XFaceNet.reshape(-1, 1)
+    y_pred, y_test = GetPredictions(XFaceNet[train_index], XFaceNet[test_index], Y[train_index], Y[test_index], SVM, SVM_parameters)
+    print("\nDeepface/Facenet + SVM Metrics")
+    precs_facenet_svm.append(precision_score(y_test, y_pred))
+    recs_facenet_svm.append(recall_score(y_test, y_pred))
+    acc_facenet_svm.append(accuracy_score(y_test, y_pred))
+    print(classification_report(y_test, y_pred, target_names=class_names))
+
+    print("Confusion matrix for Facenet + SVM:")
+    cm = confusion_matrix(y_test, y_pred, labels=range(n_classes))
+    print(cm)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+    disp.plot()
+    plt.show()
+        
+    # Facenet - Random Forest
+    y_pred, y_test = GetPredictions(XFaceNet[train_index], XFaceNet[test_index], Y[train_index], Y[test_index], RF, RF_parameters)
+    print("\nDeepface/Facenet + RF Metrics")
+    precs_facenet_rf.append(precision_score(y_test, y_pred))
+    recs_facenet_rf.append(recall_score(y_test, y_pred))
+    acc_facenet_rf.append(accuracy_score(y_test, y_pred))
+    print(classification_report(y_test, y_pred, target_names=class_names))
+
+    print("Confusion matrix for Facenet + RF:")
+    cm = confusion_matrix(y_test, y_pred, labels=range(n_classes))
+    print(cm)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=class_names)
+    disp.plot()
+    plt.show()
+        
+    fold += 1
